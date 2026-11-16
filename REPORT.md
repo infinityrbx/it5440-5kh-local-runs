@@ -68,29 +68,16 @@ Hình 1 gom cả 12 lần chạy. 7/12 có khoảng tin cậy nằm hẳn trên 
 
 Mỗi ô có 40 câu. qwen3.5 không sụt ở giữa. qwen2.5-coder có xu hướng giữa thấp hơn đầu (p = 0,07), nhưng chưa đạt ý nghĩa. Với k=3, dồn hay rải các đoạn mã cần thiết không tạo khác biệt rõ ở cả hai mô hình.
 
-## 6. Đối chiếu với kết quả của nhóm
-
-| Điểm | Kết quả của nhóm | Kết quả cục bộ | Nhận xét |
-| --- | --- | --- | --- |
-| Code thật | S2: R 81–92% ở mọi vị trí, đến 32k | toolz qwen3.5: D = −0,01 | Khớp |
-| Mô hình 7B với nhiễu | S1: giữa 8%; M4 7B: giữa 0% | D1 qwen2.5-coder: giữa 0,06 (16k) | Khớp: 7B mất vị trí giữa |
-| Bao đóng call graph (C3) | P: 74%, ngang C0 | D2 16k: 98%, từ 78% ở giữa | Khớp |
-| Mức giữa thấp có lặp lại không | Bài báo: không lặp lại, D đổi dấu giữa S1 và P | Không lần chạy nào có D âm có ý nghĩa (thấp nhất: toolz qwen3.5, D = −0,01, CI chứa 0); 7/12 có D > 0 có ý nghĩa | **Khác.** P là pilot v4 cũ của chúng ta, sinh lại filler theo từng vị trí, tức lỗi đã sửa ở v5 |
-| Chiều của E (cuối − đầu) | Âm khi suy luận từng bước, dương khi trả lời trực tiếp | D1 qwen2.5 trả lời trực tiếp: cuối > đầu | Ủng hộ nhận định "do thiết lập, không do quy mô" |
-| Quy mô mô hình | M4: 7B → 14B tăng 42,5 đ.p.t. | qwen3.5:9b ở 4k đã như mô hình lớn (C0 100%, giữa 92%) | Thế hệ mô hình, không chỉ số tham số, cũng là một giải thích |
-
-**Đề xuất:** chạy lại P bằng `pilot.py` v5 trên qwen2.5-coder:7b (cùng 50 câu, seed 2, khoảng 3,7k token; khoảng 3 giờ trên Mac). Nếu không kịp, bài báo cần ghi rõ P có lỗi filler phụ thuộc vị trí.
-
-## 7. Hạn chế và việc còn lại
+## 6. Hạn chế và việc còn lại
 
 - Cỡ mẫu nhỏ: n = 50 ở D2, 30–40 ở D1 và toolz. So sánh 4k với 16k (p = 0,09) chưa đủ ý nghĩa.
 - Chỉ có hai mô hình nhỏ, lượng tử hóa 4-bit, một lần chạy với temperature 0 và một filler seed. toolz cục bộ chỉ chạy đến 4k.
 - Ở D2 16k, 4 câu trả lời ở giữa bị cắt ở 2048 token. Đây có thể cũng là một biểu hiện của hiệu ứng: mô hình suy luận lan man hơn khi đoạn mã cần thiết nằm ở giữa.
 - D1 gần mức sàn khi chấm chính xác, nên kết luận về D1 dựa trên điểm khớp một phần.
-- Việc còn lại: chạy lại D1 với filler đã sửa trên DeepSeek-V4-Flash và Qwen3.6-27B (cần API key của nhóm), và chạy lại P bằng v5 như đề xuất ở trên.
+- Việc còn lại: chạy lại D1 với filler đã sửa trên DeepSeek-V4-Flash và Qwen3.6-27B (cần API key của nhóm), và chạy lại pilot P bằng `pilot.py` v5 trên qwen2.5-coder:7b (cùng 50 câu, seed 2), vì pilot v4 cũ sinh lại filler theo từng vị trí.
 
 ## Tái lập
 
 Repo `it5440-5kh-local-runs` chứa code, hàng đợi chạy qua đêm, log và toàn bộ kết quả thô. Chạy `python3 analysis/analyze.py` để tính lại các bảng và `python3 analysis/figures.py` để vẽ lại các hình (cần matplotlib). Chi tiết có trong `README.md`.
 
-**Hiệu đính 16/11/2026.** Bản trước ghi điểm không filler của qwen2.5-coder trên D1 là 0,25 (2 chữ số) và 0,24 (4 chữ số). Lý do: hàm `partial()` không bỏ dấu backtick, nên 26/60 câu trả lời được chấm 0. Giá trị đúng là 0,66 và 0,31. Hàm đã được sửa và hai script phân tích tính lại điểm từ log thô. Các giá trị theo vị trí và D không đổi. Bản này cũng sửa một số câu chữ (số câu sai ở giữa tại 16k, tỉ lệ 3–4 lần, cửa sổ ngữ cảnh của D2, D ≥ 0 ở mục 6) và ghi tỉ lệ toolz đến 0,5%.
+**Hiệu đính 16/11/2026.** Bản trước ghi điểm không filler của qwen2.5-coder trên D1 là 0,25 (2 chữ số) và 0,24 (4 chữ số). Lý do: hàm `partial()` không bỏ dấu backtick, nên 26/60 câu trả lời được chấm 0. Giá trị đúng là 0,66 và 0,31. Hàm đã được sửa và hai script phân tích tính lại điểm từ log thô. Các giá trị theo vị trí và D không đổi. Bản này cũng sửa một số câu chữ (số câu sai ở giữa tại 16k, tỉ lệ 3–4 lần, cửa sổ ngữ cảnh của D2, D ≥ 0) và ghi tỉ lệ toolz đến 0,5%.
