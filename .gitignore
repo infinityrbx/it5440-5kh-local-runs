@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.DS_Store
+queue/
+queue2/
+queue2b/
+queue3/
