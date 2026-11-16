@@ -15,10 +15,10 @@ Middle position, 4k vs 16k on the same 50 puzzles: 10 worse at 16k, 3 better, p 
 
 | model | digits | length | n | exact (all positions) | start | middle | end | D [95% CI] |
 |---|---|---|---|---|---|---|---|---|
-| qwen2.5-coder:7b | 2 | no filler | 30 | 3/30 | 0.25 (no position) | | | |
+| qwen2.5-coder:7b | 2 | no filler | 30 | 3/30 | 0.66 (no position) | | | |
 | qwen2.5-coder:7b | 2 | 4k | 30 | 1/90 | 0.37 | 0.16 | 0.43 | +0.25 [+0.19, +0.30] |
 | qwen2.5-coder:7b | 2 | 16k | 30 | 1/90 | 0.26 | 0.06 | 0.43 | +0.28 [+0.22, +0.35] |
-| qwen2.5-coder:7b | 4 | no filler | 30 | 1/30 | 0.24 (no position) | | | |
+| qwen2.5-coder:7b | 4 | no filler | 30 | 1/30 | 0.31 (no position) | | | |
 | qwen2.5-coder:7b | 4 | 4k | 30 | 0/90 | 0.15 | 0.05 | 0.23 | +0.14 [+0.08, +0.20] |
 | qwen2.5-coder:7b | 4 | 16k | 30 | 0/90 | 0.06 | 0.00 | 0.21 | +0.13 [+0.09, +0.17] |
 | qwen3.5:9b | 2 | no filler | 30 | 2/30 | 0.51 (no position) | | | |
@@ -34,5 +34,5 @@ Discarded run `d1_q35_0.jsonl` (qwen3.5 via /v1): 60/60 rows contain thinking, 6
 
 | model | no filler k=1 | no filler k=3 | 4k k=1 start / middle / end | middle vs start (b:c, p) | middle vs end (b:c, p) | 4k k=3 cluster start / middle / end / spread |
 |---|---|---|---|---|---|---|
-| qwen2.5-coder:7b | 52% | 20% | 52% / 38% / 45% | 7:1, p=0.07 | 5:2, p=0.45 | 30% / 38% / 35% / 32% |
-| qwen3.5:9b | 50% | 30% | 38% / 40% / 40% | 3:4, p=1.00 | 2:2, p=1.00 | 30% / 22% / 22% / 20% |
+| qwen2.5-coder:7b | 52.5% | 20% | 52.5% / 37.5% / 45% | 7:1, p=0.07 | 5:2, p=0.45 | 30% / 37.5% / 35% / 32.5% |
+| qwen3.5:9b | 50% | 30% | 37.5% / 40% / 40% | 3:4, p=1.00 | 2:2, p=1.00 | 30% / 22.5% / 22.5% / 20% |

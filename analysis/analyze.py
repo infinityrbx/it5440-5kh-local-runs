@@ -15,6 +15,8 @@ import json
 import os
 import random
 from collections import defaultdict
+
+from d1score import d1_partial  # D1 partial score recomputed with the backtick fix
 from math import comb
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -46,7 +48,8 @@ def boot_ci(vals, n=10000, seed=0):
 
 
 def pct(x):
-    return f"{100 * x:.0f}%"
+    s = f"{100 * x:.1f}"
+    return (s[:-2] if s.endswith(".0") else s) + "%"
 
 
 # ---------------------------------------------------------------- D2: SemTrace-Dep (pilot.py v5)
@@ -111,13 +114,13 @@ for model, files in D1.items():
                 continue
             ex = sum(bool(r.get("correct")) for r in sub)
             if L == 0:
-                part = sum(r.get("partial", 0) for r in sub) / len(sub)
+                part = sum(d1_partial(r) for r in sub) / len(sub)
                 OUT["d1"][f"{model}|{dg}|oracle"] = dict(n=len(sub), exact=ex, partial=part)
                 MD.append(f"| {model} | {dg} | no filler | {len(sub)} | {ex}/{len(sub)} | {part:.2f} (no position) | | | |")
                 continue
             by = defaultdict(dict)
             for r in sub:
-                by[r["item"]][r["layout"]] = r.get("partial", 0)
+                by[r["item"]][r["layout"]] = d1_partial(r)
             its = [v for v in by.values() if {"start", "middle", "end"} <= set(v)]
             hashes = defaultdict(set)
             for r in sub:

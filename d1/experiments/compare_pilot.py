@@ -65,6 +65,7 @@ def toolz_solvable(n):
 
 def partial(pred, gold):
     import ast
+    pred = pred.strip().strip("`").strip()   # same normalisation as run_eval.same_value
     try:
         p, g = ast.literal_eval(pred), ast.literal_eval(gold)
     except Exception:

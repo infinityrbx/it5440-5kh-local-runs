@@ -7,6 +7,8 @@ import json
 import os
 import random
 from collections import defaultdict
+
+from d1score import d1_partial  # D1 partial score recomputed with the backtick fix
 from math import sqrt
 
 import matplotlib
@@ -92,13 +94,13 @@ for r_i, (model, files) in enumerate(D1.items()):
     rs = [r for f in files for r in load(f) if r.get("task") == "semantic" and "error" not in r]
     for c_i, dg in enumerate((2, 4)):
         ax = axes[r_i][c_i]
-        orc = [r.get("partial", 0) for r in rs if r["digits"] == dg and r["length"] == 0]
+        orc = [d1_partial(r) for r in rs if r["digits"] == dg and r["length"] == 0]
         ax.axhline(sum(orc) / len(orc), color=MUTED, lw=1, ls=(0, (4, 3)))
         for L, col, dx in ((4000, C4K, -0.06), (16000, C16K, 0.06)):
             by = defaultdict(dict)
             for r in rs:
                 if r["digits"] == dg and r["length"] == L:
-                    by[r["item"]][r["layout"]] = r.get("partial", 0)
+                    by[r["item"]][r["layout"]] = d1_partial(r)
             its = [v for v in by.values() if {"start", "middle", "end"} <= set(v)]
             stats = [mean_ci([v[l] for v in its], seed=j) for j, l in enumerate(("start", "middle", "end"))]
             xs = [j + dx for j in range(3)]
@@ -111,7 +113,7 @@ for r_i, (model, files) in enumerate(D1.items()):
         ax.set_title(f"{model} · {dg} chữ số", fontsize=9, color=INK, loc="left")
         ax.set_xticks(range(3), POS)
         ax.set_xlim(-0.4, 2.4)
-        ax.set_ylim(0, 0.62)
+        ax.set_ylim(0, 0.72)
 for ax in axes[:, 0]:
     ax.set_ylabel("Điểm khớp một phần")
 fig.legend(handles=[plt.Line2D([], [], color=C4K, lw=2, marker="o", label="4k token"),

@@ -7,14 +7,14 @@
 Trên dữ liệu tổng hợp, mô hình làm kém hơn rõ rệt khi đoạn mã cần thiết nằm ở giữa ngữ cảnh. Trên code thật (toolz), hiệu ứng này không xuất hiện.
 
 - **D2 SemTrace-Dep, qwen3.5:9b, 50 câu.** Ở 16k token, độ chính xác là 98% ở đầu, 78% ở giữa và 98% ở cuối (p = 0,002; D = +0,20 [0,10; 0,32]). Ở 4k token trên cùng 50 câu thì không có hiệu ứng (96 / 92 / 92%).
-- **D1 SemTrace (filler cố định).** Cả hai mô hình đều thấp nhất ở giữa theo điểm khớp một phần. Mức sụt của qwen2.5-coder:7b (D = +0,13 đến +0,28) lớn gấp 2–3 lần qwen3.5:9b (D = +0,03 đến +0,10).
+- **D1 SemTrace (filler cố định).** Cả hai mô hình đều thấp nhất ở giữa theo điểm khớp một phần. Mức sụt của qwen2.5-coder:7b (D = +0,13 đến +0,28) lớn gấp khoảng 3–4 lần qwen3.5:9b (D = +0,03 đến +0,10).
 - **toolz, code thật.** qwen3.5:9b không sụt ở giữa (D = −0,01). Kết quả này khớp với nghiên cứu S2 của nhóm.
 
 Mọi con số và hình được tính lại từ log thô bằng `analysis/analyze.py` và `analysis/figures.py` trong repo đính kèm.
 
 ## 1. Thiết lập
 
-Hai mô hình mở chạy cục bộ qua Ollama trên Apple M2 Pro 16 GB, temperature 0, cửa sổ ngữ cảnh 24.576 token, mỗi lần một truy vấn. Thinking của qwen3.5 được tắt qua API gốc của Ollama; đã kiểm tra không có dòng nào chứa thinking.
+Hai mô hình mở chạy cục bộ qua Ollama trên Apple M2 Pro 16 GB, temperature 0, mỗi lần một truy vấn. Cửa sổ ngữ cảnh là 24.576 token cho D1 và toolz; D2 (`pilot.py` v5) đặt cửa sổ theo độ dài: 8.192 token ở 4k và 23.360 token ở 16k (không prompt nào bị cắt). Thinking của qwen3.5 được tắt qua API gốc của Ollama; đã kiểm tra không có dòng nào chứa thinking.
 
 | Tập dữ liệu | Nội dung | Mô hình | Độ dài | Cách chấm |
 | --- | --- | --- | --- | --- |
@@ -24,7 +24,7 @@ Hai mô hình mở chạy cục bộ qua Ollama trên Apple M2 Pro 16 GB, temper
 
 Filler được dựng một lần cho mỗi câu và dùng lại ở mọi vị trí. Script kiểm tra `filler_hash` trùng nhau ở đầu, giữa và cuối, nên chênh lệch chỉ đến từ vị trí.
 
-Chỉ số chính là D = (đầu + cuối)/2 − giữa, tính theo từng câu rồi lấy trung bình. D > 0 nghĩa là vị trí giữa kém hơn hai đầu. Khoảng tin cậy 95% tính bằng bootstrap 10.000 lần. So sánh cặp dùng sign test chính xác (McNemar). D1 chấm khớp một phần (tỉ lệ phần tử đúng trong danh sách đáp án) vì khớp chính xác gần như bằng 0.
+Chỉ số chính là D = (đầu + cuối)/2 − giữa, tính theo từng câu rồi lấy trung bình. D > 0 nghĩa là vị trí giữa kém hơn hai đầu. Khoảng tin cậy 95% tính bằng bootstrap 10.000 lần. So sánh cặp dùng sign test chính xác (McNemar). D1 chấm khớp một phần (tỉ lệ phần tử đúng trong danh sách đáp án) vì khớp chính xác gần như bằng 0. Điểm khớp một phần được tính lại từ câu trả lời đã ghi trong log, sau khi bỏ dấu backtick bao quanh (cách chuẩn hóa giống khi chấm khớp chính xác).
 
 ## 2. Kết quả chính: hiệu ứng vị trí ở mọi lần chạy
 
@@ -34,7 +34,7 @@ Hình 1 gom cả 12 lần chạy. 7/12 có khoảng tin cậy nằm hẳn trên 
 
 1. **Độ dài làm hiệu ứng xuất hiện ở mô hình mạnh hơn.** qwen3.5 trên D2 không sụt ở 4k nhưng sụt rõ ở 16k.
 2. **Mô hình cũ hơn sụt mạnh hơn.** Trên D1, qwen2.5-coder có D cao hơn qwen3.5 ở mọi ô.
-3. **Code thật không cho thấy hiệu ứng.** Cả hai khoảng tin cậy của toolz đều chứa 0. qwen2.5-coder có xu hướng sụt (+0,11), nhưng chưa đạt ý nghĩa.
+3. **Code thật không cho thấy hiệu ứng.** Cả hai khoảng tin cậy của toolz đều chứa 0. qwen2.5-coder có xu hướng sụt (+0,11), nhưng chưa đạt ý nghĩa (cận dưới của CI xấp xỉ 0, p = 0,07).
 
 ## 3. D2 SemTrace-Dep: chỉ sụt ở giữa khi ngữ cảnh dài
 
@@ -45,8 +45,8 @@ Hình 1 gom cả 12 lần chạy. 7/12 có khoảng tin cậy nằm hẳn trên 
 | 4k (4.216–4.572) | 100% | 96% | 92% | 92% | 96% | 98% | 3:1, p = 0,63 | +0,02 [−0,04; +0,09] |
 | 16k (16.636–17.438) | 98% | 98% | 78% | 98% | 98% | 98% | 10:0, p = 0,002 | +0,20 [+0,10; +0,32] |
 
-- Cả 10 câu sai ở giữa tại 16k đều đúng ở cả đầu lẫn cuối. Không có câu nào theo chiều ngược lại.
-- 4 trong 10 câu sai là câu trả lời bị cắt ở giới hạn 2048 token, và việc bị cắt chỉ xảy ra ở giữa. Bỏ 4 câu này vẫn còn 6:0, p = 0,031.
+- Ở 16k có 11 câu sai ở giữa. 10 câu trong số đó đúng ở cả đầu lẫn cuối; câu còn lại sai ở cả ba vị trí. Không có câu nào đúng ở giữa mà sai ở đầu hoặc cuối.
+- 4 trong 10 câu này là câu trả lời bị cắt ở giới hạn 2048 token, và việc bị cắt chỉ xảy ra ở giữa. Bỏ 4 câu này vẫn còn 6:0, p = 0,031.
 - C0, C2 và C3 đều đạt 96–100%, nên mô hình làm được bài. Chuyển khối mã cần thiết ra cuối (C2) hoặc cắt theo call graph (C3) khôi phục độ chính xác từ 78% lên 98%.
 - Riêng vị trí giữa, từ 4k lên 16k có 10 câu tệ đi và 3 câu tốt lên (p = 0,09). Xu hướng tăng theo độ dài rõ, nhưng chưa đủ ý nghĩa với 50 câu.
 
@@ -54,7 +54,7 @@ Hình 1 gom cả 12 lần chạy. 7/12 có khoảng tin cậy nằm hẳn trên 
 
 ![Hình 3. Điểm khớp một phần theo vị trí, n = 30 mỗi ô. Đường gạch: điểm khi không có filler.](analysis/figures/fig2_d1.png)
 
-- **qwen2.5-coder:7b** có dạng chữ V rõ. Ở 16k, 2 chữ số: đầu 0,26, giữa 0,06, cuối 0,43. Vị trí cuối còn cao hơn cả khi không có filler (0,25), nghĩa là mô hình thiên về đoạn mã gần câu hỏi nhất (recency).
+- **qwen2.5-coder:7b** có dạng chữ V rõ. Ở 16k, 2 chữ số: đầu 0,26, giữa 0,06, cuối 0,43. Khi không có filler, điểm là 0,66, nên filler làm giảm điểm ở mọi vị trí, nặng nhất ở giữa. Vị trí cuối vẫn cao hơn vị trí đầu (0,43 so với 0,26), tức mô hình ưu tiên đoạn mã gần câu hỏi hơn (recency).
 - **qwen3.5:9b** chỉ sụt nhẹ ở giữa (D ≈ +0,09 đến +0,10 với 2 chữ số). Ở 16k, điểm thấp hơn 4k ở mọi vị trí, không riêng ở giữa.
 - Bài 4 chữ số khó đến mức gần sàn với qwen3.5 (0,08–0,17), nên không thấy hiệu ứng rõ.
 - Bài chép lại nguyên văn đoạn mã ở vị trí giữa đạt 100% (qwen2.5-coder, 120 lượt). Mô hình tìm thấy đoạn mã nhưng truy vết sai, nên vấn đề nằm ở khâu sử dụng, không phải khâu truy xuất.
@@ -63,8 +63,8 @@ Hình 1 gom cả 12 lần chạy. 7/12 có khoảng tin cậy nằm hẳn trên 
 
 | Mô hình | Không filler k=1 | Không filler k=3 | 4k k=1 đầu / giữa / cuối | Giữa so với đầu (b:c, p) | 4k k=3 cụm đầu / giữa / cuối / rải |
 | --- | --- | --- | --- | --- | --- |
-| qwen2.5-coder:7b | 52% | 20% | 52% / 38% / 45% | 7:1, p = 0,07 | 30% / 38% / 35% / 32% |
-| qwen3.5:9b | 50% | 30% | 38% / 40% / 40% | 3:4, p = 1,00 | 30% / 22% / 22% / 20% |
+| qwen2.5-coder:7b | 52,5% | 20% | 52,5% / 37,5% / 45% | 7:1, p = 0,07 | 30% / 37,5% / 35% / 32,5% |
+| qwen3.5:9b | 50% | 30% | 37,5% / 40% / 40% | 3:4, p = 1,00 | 30% / 22,5% / 22,5% / 20% |
 
 Mỗi ô có 40 câu. qwen3.5 không sụt ở giữa. qwen2.5-coder có xu hướng giữa thấp hơn đầu (p = 0,07), nhưng chưa đạt ý nghĩa. Với k=3, dồn hay rải các đoạn mã cần thiết không tạo khác biệt rõ ở cả hai mô hình.
 
@@ -75,7 +75,7 @@ Mỗi ô có 40 câu. qwen3.5 không sụt ở giữa. qwen2.5-coder có xu hư�
 | Code thật | S2: R 81–92% ở mọi vị trí, đến 32k | toolz qwen3.5: D = −0,01 | Khớp |
 | Mô hình 7B với nhiễu | S1: giữa 8%; M4 7B: giữa 0% | D1 qwen2.5-coder: giữa 0,06 (16k) | Khớp: 7B mất vị trí giữa |
 | Bao đóng call graph (C3) | P: 74%, ngang C0 | D2 16k: 98%, từ 78% ở giữa | Khớp |
-| Mức giữa thấp có lặp lại không | Bài báo: không lặp lại, D đổi dấu giữa S1 và P | Mọi lần chạy cục bộ có D ≥ 0, 7/12 có ý nghĩa | **Khác.** P là pilot v4 cũ của chúng ta, sinh lại filler theo từng vị trí, tức lỗi đã sửa ở v5 |
+| Mức giữa thấp có lặp lại không | Bài báo: không lặp lại, D đổi dấu giữa S1 và P | Không lần chạy nào có D âm có ý nghĩa (thấp nhất: toolz qwen3.5, D = −0,01, CI chứa 0); 7/12 có D > 0 có ý nghĩa | **Khác.** P là pilot v4 cũ của chúng ta, sinh lại filler theo từng vị trí, tức lỗi đã sửa ở v5 |
 | Chiều của E (cuối − đầu) | Âm khi suy luận từng bước, dương khi trả lời trực tiếp | D1 qwen2.5 trả lời trực tiếp: cuối > đầu | Ủng hộ nhận định "do thiết lập, không do quy mô" |
 | Quy mô mô hình | M4: 7B → 14B tăng 42,5 đ.p.t. | qwen3.5:9b ở 4k đã như mô hình lớn (C0 100%, giữa 92%) | Thế hệ mô hình, không chỉ số tham số, cũng là một giải thích |
 
@@ -92,3 +92,5 @@ Mỗi ô có 40 câu. qwen3.5 không sụt ở giữa. qwen2.5-coder có xu hư�
 ## Tái lập
 
 Repo `it5440-5kh-local-runs` chứa code, hàng đợi chạy qua đêm, log và toàn bộ kết quả thô. Chạy `python3 analysis/analyze.py` để tính lại các bảng và `python3 analysis/figures.py` để vẽ lại các hình (cần matplotlib). Chi tiết có trong `README.md`.
+
+**Hiệu đính 16/11/2026.** Bản trước ghi điểm không filler của qwen2.5-coder trên D1 là 0,25 (2 chữ số) và 0,24 (4 chữ số). Lý do: hàm `partial()` không bỏ dấu backtick, nên 26/60 câu trả lời được chấm 0. Giá trị đúng là 0,66 và 0,31. Hàm đã được sửa và hai script phân tích tính lại điểm từ log thô. Các giá trị theo vị trí và D không đổi. Bản này cũng sửa một số câu chữ (số câu sai ở giữa tại 16k, tỉ lệ 3–4 lần, cửa sổ ngữ cảnh của D2, D ≥ 0 ở mục 6) và ghi tỉ lệ toolz đến 0,5%.

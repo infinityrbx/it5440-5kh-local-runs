@@ -1,0 +1,18 @@
+@page { size: A4; margin: 18mm 18mm 18mm 18mm; }
+body { font-family: "Liberation Sans", Arial, "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.5; color: #222; }
+h1 { color: #1f3a5f; font-size: 19pt; margin: 0 0 4px; }
+h1 + p { color: #666; margin-top: 0; }
+h2 { color: #1f3a5f; font-size: 14pt; border-bottom: 1.5px solid #1f3a5f; padding-bottom: 4px; margin-top: 22px; }
+h2.brk { break-before: page; }
+table { border-collapse: collapse; width: 100%; font-size: 8.5pt; margin: 10px 0; break-inside: avoid; }
+th { background: #e8eef5; text-align: left; }
+th, td { border: 1px solid #c9d3df; padding: 5px 6px; vertical-align: top; }
+code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.5pt; background: #f3f3f3; padding: 0 2px; }
+figure { margin: 12px 0; text-align: center; break-inside: avoid; }
+figure img { max-width: 100%; }
+figcaption { font-size: 8.5pt; color: #555; margin-top: 4px; }
+li { margin-bottom: 3px; }
+h2 { break-after: avoid; }
+figure img { max-width: 88%; }
+img[src*="fig1_d2"], figure:has(img[alt^="Hình 2"]) img { max-width: 72%; }
+table { break-inside: avoid; }

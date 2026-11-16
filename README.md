@@ -41,6 +41,11 @@ Only `run_eval.py` (same file in `d1/` and `toolz/`), all opt-in through environ
 
 With none of these set, the file behaves exactly like the group's version.
 
+`d1/experiments/compare_pilot.py`: `partial()` now strips Markdown backticks before parsing, as
+`run_eval.same_value` already did. The old version scored backticked answers 0 (26 of qwen2.5-coder's
+60 no-filler answers). The `partial` field in the existing logs comes from the old version, so
+`analysis/analyze.py` and `analysis/figures.py` recompute it from `pred` (`analysis/d1score.py`).
+
 `pilot/pilot.py` (D2) is ours. v5 builds the filler once per item and reuses it at every
 position, gives every generated function a unique name, and sizes `num_ctx` from the target
 length. It uses Ollama's native API with thinking off.
