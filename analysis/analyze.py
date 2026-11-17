@@ -53,48 +53,56 @@ def pct(x):
 
 
 # ---------------------------------------------------------------- D2: SemTrace-Dep (pilot.py v5)
-D2 = {("4k", 2): "pilot/results/q35_4k_seed2_n20.jsonl", ("16k", 2): "pilot/results/q35_16k_seed2_n20.jsonl",
-      ("4k", 3): "pilot/results/q35_4k_seed3_n30.jsonl", ("16k", 3): "pilot/results/q35_16k_seed3_n30.jsonl"}
-d2 = {k: {(r["i"], r["cond"], r["pos"]): r for r in load(v)} for k, v in D2.items()}
-MD.append("## D2 SemTrace-Dep (qwen3.5:9b, k=5, depth 2, CoT, max 2048 output tokens)\n")
-MD.append("| length | seeds | n | C0 | C1 start | C1 middle | C1 end | C2 | C3 | middle vs start (b:c, p) | D [95% CI] | middle answers cut at 2048 |")
-MD.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+D2_MODELS = {"qwen3.5:9b": "q35", "qwen2.5-coder:7b": "q25c"}
+MD.append("## D2 SemTrace-Dep (k=5, depth 2, CoT, max 2048 output tokens; seeds 2+3 = 50 puzzles)\n")
+MD.append("| model | length | n | C0 | C1 start | C1 middle | C1 end | C2 | C3 | middle vs start (b:c, p) | middle vs end (b:c, p) | D [95% CI] | middle answers cut at 2048 |")
+MD.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 OUT["d2"] = {}
-for L in ("4k", "16k"):
-    pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[(L, s)]})]
-    # same filler at every position (pilot v5 guarantee) and same puzzles at 4k and 16k
-    for s, i in pool:
-        assert len({d2[(L, s)][(i, "C1", q)]["filler_hash"] for q in (0.0, 0.5, 1.0)}) == 1
-        assert d2[("4k", s)][(i, "C0", 0.0)]["target"] == d2[("16k", s)][(i, "C0", 0.0)]["target"]
-    g = lambda s, i, c, q=0.0: bool(d2[(L, s)][(i, c, q)]["correct"])
-    acc = {c: sum(g(s, i, c) for s, i in pool) / len(pool) for c in ("C0", "C2", "C3")}
-    pos = {q: sum(g(s, i, "C1", q) for s, i in pool) / len(pool) for q in (0.0, 0.5, 1.0)}
-    b = sum(g(s, i, "C1", 0.0) and not g(s, i, "C1", 0.5) for s, i in pool)
-    c = sum(g(s, i, "C1", 0.5) and not g(s, i, "C1", 0.0) for s, i in pool)
-    vals = [(g(s, i, "C1", 0.0) + g(s, i, "C1", 1.0)) / 2 - g(s, i, "C1", 0.5) for s, i in pool]
-    D, (lo, hi) = sum(vals) / len(vals), boot_ci(vals)
-    cut = sum(d2[(L, s)][(i, "C1", 0.5)]["output_tokens"] >= 2048 for s, i in pool)
-    toks = [d2[(L, s)][(i, "C1", q)]["prompt_tokens"] for s, i in pool for q in (0.0, 0.5, 1.0)]
-    OUT["d2"][L] = dict(n=len(pool), acc=acc, pos=pos, b=b, c=c, p=sign_test(b, c), D=D, ci=[lo, hi],
-                        middle_cut=cut, prompt_tokens=[min(toks), max(toks)])
-    MD.append(f"| {L} ({min(toks)}–{max(toks)} prompt tokens) | 2+3 | {len(pool)} | {pct(acc['C0'])} | {pct(pos[0.0])} | "
-              f"{pct(pos[0.5])} | {pct(pos[1.0])} | {pct(acc['C2'])} | {pct(acc['C3'])} | {b}:{c}, p={sign_test(b, c):.3f} | "
-              f"{D:+.2f} [{lo:+.2f}, {hi:+.2f}] | {cut} |")
-pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[("4k", s)]})]
-m4 = lambda s, i: bool(d2[("4k", s)][(i, "C1", 0.5)]["correct"])
-m16 = lambda s, i: bool(d2[("16k", s)][(i, "C1", 0.5)]["correct"])
-b = sum(m4(s, i) and not m16(s, i) for s, i in pool)
-c = sum(m16(s, i) and not m4(s, i) for s, i in pool)
-OUT["d2"]["middle_4k_vs_16k"] = dict(b=b, c=c, p=sign_test(b, c))
-MD.append(f"\nMiddle position, 4k vs 16k on the same {len(pool)} puzzles: {b} worse at 16k, {c} better, "
-          f"p = {sign_test(b, c):.3f}.\n")
-# 16k without truncated middle answers
-cut_items = [(s, i) for s, i in pool if d2[("16k", s)][(i, "C1", 0.5)]["output_tokens"] >= 2048]
-g16 = lambda s, i, q: bool(d2[("16k", s)][(i, "C1", q)]["correct"])
-b2 = sum(g16(s, i, 0.0) and not g16(s, i, 0.5) for s, i in pool if (s, i) not in cut_items)
-c2 = sum(g16(s, i, 0.5) and not g16(s, i, 0.0) for s, i in pool if (s, i) not in cut_items)
-OUT["d2"]["16k_without_cut"] = dict(b=b2, c=c2, p=sign_test(b2, c2))
-MD.append(f"16k, leaving out the {len(cut_items)} middle answers cut at 2048 tokens: {b2}:{c2}, p = {sign_test(b2, c2):.3f}.\n")
+NOTES = []
+for model, tag in D2_MODELS.items():
+    d2 = {(L, s): {(r["i"], r["cond"], r["pos"]): r for r in load(f"pilot/results/{tag}_{L}_seed{s}_n{n}.jsonl")}
+          for L in ("4k", "16k") for s, n in ((2, 20), (3, 30))}
+    OUT["d2"][model] = {}
+    for L in ("4k", "16k"):
+        pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[(L, s)]})]
+        # same filler at every position (pilot v5 guarantee) and same puzzles at 4k and 16k
+        for s, i in pool:
+            assert len({d2[(L, s)][(i, "C1", q)]["filler_hash"] for q in (0.0, 0.5, 1.0)}) == 1
+            assert d2[("4k", s)][(i, "C0", 0.0)]["target"] == d2[("16k", s)][(i, "C0", 0.0)]["target"]
+        g = lambda s, i, c, q=0.0: bool(d2[(L, s)][(i, c, q)]["correct"])
+        acc = {c: sum(g(s, i, c) for s, i in pool) / len(pool) for c in ("C0", "C2", "C3")}
+        pos = {q: sum(g(s, i, "C1", q) for s, i in pool) / len(pool) for q in (0.0, 0.5, 1.0)}
+        tests = {}
+        for ref in (0.0, 1.0):
+            b = sum(g(s, i, "C1", ref) and not g(s, i, "C1", 0.5) for s, i in pool)
+            c = sum(g(s, i, "C1", 0.5) and not g(s, i, "C1", ref) for s, i in pool)
+            tests[ref] = (b, c, sign_test(b, c))
+        vals = [(g(s, i, "C1", 0.0) + g(s, i, "C1", 1.0)) / 2 - g(s, i, "C1", 0.5) for s, i in pool]
+        D, (lo, hi) = sum(vals) / len(vals), boot_ci(vals)
+        cut = sum(d2[(L, s)][(i, "C1", 0.5)]["output_tokens"] >= 2048 for s, i in pool)
+        toks = [d2[(L, s)][(i, "C1", q)]["prompt_tokens"] for s, i in pool for q in (0.0, 0.5, 1.0)]
+        (b, c, pv), (be, ce, pe) = tests[0.0], tests[1.0]
+        OUT["d2"][model][L] = dict(n=len(pool), acc=acc, pos=pos, b=b, c=c, p=pv, b_end=be, c_end=ce, p_end=pe,
+                                   D=D, ci=[lo, hi], middle_cut=cut, prompt_tokens=[min(toks), max(toks)])
+        MD.append(f"| {model} | {L} ({min(toks)}–{max(toks)} prompt tokens) | {len(pool)} | {pct(acc['C0'])} | {pct(pos[0.0])} | "
+                  f"{pct(pos[0.5])} | {pct(pos[1.0])} | {pct(acc['C2'])} | {pct(acc['C3'])} | {b}:{c}, p={pv:.3f} | "
+                  f"{be}:{ce}, p={pe:.3f} | {D:+.2f} [{lo:+.2f}, {hi:+.2f}] | {cut} |")
+    pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[("4k", s)]})]
+    m4 = lambda s, i: bool(d2[("4k", s)][(i, "C1", 0.5)]["correct"])
+    m16 = lambda s, i: bool(d2[("16k", s)][(i, "C1", 0.5)]["correct"])
+    b = sum(m4(s, i) and not m16(s, i) for s, i in pool)
+    c = sum(m16(s, i) and not m4(s, i) for s, i in pool)
+    OUT["d2"][model]["middle_4k_vs_16k"] = dict(b=b, c=c, p=sign_test(b, c))
+    NOTES.append(f"{model}: middle position, 4k vs 16k on the same {len(pool)} puzzles: {b} worse at 16k, {c} better, "
+                 f"p = {sign_test(b, c):.3f}.")
+    cut_items = [(s, i) for s, i in pool if d2[("16k", s)][(i, "C1", 0.5)]["output_tokens"] >= 2048]
+    g16 = lambda s, i, q: bool(d2[("16k", s)][(i, "C1", q)]["correct"])
+    b2 = sum(g16(s, i, 0.0) and not g16(s, i, 0.5) for s, i in pool if (s, i) not in cut_items)
+    c2 = sum(g16(s, i, 0.5) and not g16(s, i, 0.0) for s, i in pool if (s, i) not in cut_items)
+    OUT["d2"][model]["16k_without_cut"] = dict(b=b2, c=c2, p=sign_test(b2, c2))
+    NOTES.append(f"{model}: 16k, leaving out the {len(cut_items)} middle answers cut at 2048 tokens: {b2}:{c2}, "
+                 f"p = {sign_test(b2, c2):.3f}.")
+MD.append("\n" + "\n\n".join(NOTES) + "\n")
 
 
 # ---------------------------------------------------------------- D1: SemTrace (group builder, fixed filler)

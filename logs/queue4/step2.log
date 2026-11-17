@@ -1,0 +1,43 @@
+item 1/30 done (320s)
+item 2/30 done (659s)
+item 3/30 done (958s)
+item 4/30 done (1335s)
+item 5/30 done (1677s)
+item 6/30 done (2035s)
+item 7/30 done (2341s)
+item 8/30 done (2623s)
+item 9/30 done (2992s)
+item 10/30 done (3299s)
+item 11/30 done (3661s)
+item 12/30 done (4002s)
+item 13/30 done (4297s)
+item 14/30 done (4632s)
+item 15/30 done (4999s)
+item 16/30 done (5320s)
+item 17/30 done (5613s)
+item 18/30 done (5936s)
+item 19/30 done (6267s)
+item 20/30 done (6548s)
+item 21/30 done (6908s)
+item 22/30 done (7207s)
+item 23/30 done (7612s)
+item 24/30 done (7903s)
+item 25/30 done (8196s)
+item 26/30 done (8496s)
+item 27/30 done (8825s)
+item 28/30 done (9120s)
+item 29/30 done (9421s)
+item 30/30 done (9776s)
+
+C3 closure exact on 90/90 contexts
+
+Model qwen2.5-coder:7b, ~4000 tokens, n=30
+condition        acc     n
+C0            56.67%    30
+C1@p=0.0      23.33%    30
+C1@p=0.5       3.33%    30
+C1@p=1.0       6.67%    30
+C2             0.00%    30
+C3            63.33%    30
+
+log: results/qwen2.5-coder_7b_20261117_000733.jsonl

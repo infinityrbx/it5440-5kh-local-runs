@@ -54,34 +54,37 @@ def mean_ci(vals, seed=0):
 
 effects = []   # (label, group, D, lo, hi)
 
-# ---------------------------------------------------------------- Fig 1: D2 profile
-D2 = {("4k", 2): "pilot/results/q35_4k_seed2_n20.jsonl", ("16k", 2): "pilot/results/q35_16k_seed2_n20.jsonl",
-      ("4k", 3): "pilot/results/q35_4k_seed3_n30.jsonl", ("16k", 3): "pilot/results/q35_16k_seed3_n30.jsonl"}
-d2 = {k: {(r["i"], r["cond"], r["pos"]): r for r in load(v)} for k, v in D2.items()}
-fig, ax = plt.subplots(figsize=(5.6, 3.3))
-for L, col, dx in (("4k", C4K, -0.06), ("16k", C16K, 0.06)):
-    pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[(L, s)]})]
-    ks = [sum(bool(d2[(L, s)][(i, "C1", q)]["correct"]) for s, i in pool) for q in (0.0, 0.5, 1.0)]
-    n = len(pool)
-    ys = [100 * k / n for k in ks]
-    cis = [wilson(k, n) for k in ks]
-    xs = [j + dx for j in range(3)]
-    ax.errorbar(xs, ys, yerr=[[y - 100 * lo for y, (lo, hi) in zip(ys, cis)], [100 * hi - y for y, (lo, hi) in zip(ys, cis)]],
-                fmt="none", ecolor=col, elinewidth=1.4, capsize=3, alpha=0.75)
-    ax.plot(xs, ys, color=col, lw=2, marker="o", ms=7, mec="white", mew=1.5, zorder=3)
-    ax.annotate(f"{L} ({ys[1]:.0f}% ở giữa)", (xs[1], ys[1]), xytext=(0, -18 if L == "16k" else 14),
-                textcoords="offset points", ha="center", fontsize=8.5, color=INK)
-    vals = [(d2[(L, s)][(i, "C1", 0.0)]["correct"] + d2[(L, s)][(i, "C1", 1.0)]["correct"]) / 2
-            - d2[(L, s)][(i, "C1", 0.5)]["correct"] for s, i in pool]
-    effects.append((f"D2 · qwen3.5:9b · {L}", "D2 (chính xác)", *mean_ci(vals)))
-ax.set_xticks(range(3), POS)
-ax.set_xlim(-0.4, 2.4)
-ax.set_ylim(50, 102)
-ax.set_ylabel("Độ chính xác C1 (%)")
-ax.set_title("D2 SemTrace-Dep, qwen3.5:9b, n = 50: chỉ sụt ở giữa khi dài 16k", loc="left", fontsize=10, color=INK)
-ax.legend(handles=[plt.Line2D([], [], color=C4K, lw=2, marker="o", label="4k token"),
-                   plt.Line2D([], [], color=C16K, lw=2, marker="o", label="16k token")],
-          frameon=False, loc="lower left", fontsize=8.5)
+# ---------------------------------------------------------------- Fig 1: D2 profile (both models)
+fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.3), sharey=True)
+for ax, (model, tag) in zip(axes, (("qwen3.5:9b", "q35"), ("qwen2.5-coder:7b", "q25c"))):
+    d2 = {(L, s): {(r["i"], r["cond"], r["pos"]): r for r in load(f"pilot/results/{tag}_{L}_seed{s}_n{n}.jsonl")}
+          for L in ("4k", "16k") for s, n in ((2, 20), (3, 30))}
+    for L, col, dx in (("4k", C4K, -0.06), ("16k", C16K, 0.06)):
+        pool = [(s, i) for s in (2, 3) for i in sorted({k[0] for k in d2[(L, s)]})]
+        ks = [sum(bool(d2[(L, s)][(i, "C1", q)]["correct"]) for s, i in pool) for q in (0.0, 0.5, 1.0)]
+        n = len(pool)
+        ys = [100 * k / n for k in ks]
+        cis = [wilson(k, n) for k in ks]
+        xs = [j + dx for j in range(3)]
+        ax.errorbar(xs, ys, yerr=[[y - 100 * lo for y, (lo, hi) in zip(ys, cis)], [100 * hi - y for y, (lo, hi) in zip(ys, cis)]],
+                    fmt="none", ecolor=col, elinewidth=1.4, capsize=3, alpha=0.75)
+        ax.plot(xs, ys, color=col, lw=2, marker="o", ms=7, mec="white", mew=1.5, zorder=3)
+        c0 = 100 * sum(bool(d2[(L, s)][(i, "C0", 0.0)]["correct"]) for s, i in pool) / n
+        ax.axhline(c0, color=col, lw=1, ls=(0, (4, 3)), alpha=0.8)
+        vals = [(d2[(L, s)][(i, "C1", 0.0)]["correct"] + d2[(L, s)][(i, "C1", 1.0)]["correct"]) / 2
+                - d2[(L, s)][(i, "C1", 0.5)]["correct"] for s, i in pool]
+        effects.append((f"D2 · {model} · {L}", "D2 (chính xác)", *mean_ci(vals)))
+    ax.set_xticks(range(3), POS)
+    ax.set_xlim(-0.4, 2.4)
+    ax.set_ylim(0, 102)
+    ax.set_title(f"{model}", loc="left", fontsize=9, color=INK)
+axes[0].set_ylabel("Độ chính xác C1 (%)")
+fig.legend(handles=[plt.Line2D([], [], color=C4K, lw=2, marker="o", label="4k token"),
+                    plt.Line2D([], [], color=C16K, lw=2, marker="o", label="16k token"),
+                    plt.Line2D([], [], color=MUTED, lw=1, ls=(0, (4, 3)), label="C0 (không filler), cùng màu")],
+           frameon=False, loc="upper center", ncol=3, bbox_to_anchor=(0.5, 1.02), fontsize=8.5)
+fig.suptitle("D2 SemTrace-Dep, n = 50 mỗi ô", x=0.01, ha="left", y=1.1, fontsize=10, color=INK)
+fig.tight_layout()
 fig.savefig(os.path.join(OUT, "fig1_d2.png"))
 plt.close(fig)
 
@@ -140,7 +143,7 @@ for model, f in (("qwen2.5-coder", "toolz/experiments/results/local_q25c_4k.json
 # ---------------------------------------------------------------- Fig 3: forest plot of D
 order = ["D2 (chính xác)", "D1 (khớp một phần)", "toolz (chính xác)"]
 effects.sort(key=lambda e: (order.index(e[1]), e[0]))
-fig, ax = plt.subplots(figsize=(6.6, 4.4))
+fig, ax = plt.subplots(figsize=(6.6, 4.9))
 y = 0
 ticks, labels = [], []
 for g in order:

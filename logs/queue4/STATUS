@@ -1,0 +1,10 @@
+2026-11-16 18:40:06 step 1 d2-q25c-4k-seed2: START
+2026-11-16 22:18:54 step 1 d2-q25c-4k-seed2: START
+2026-11-17 00:07:33 step 1 d2-q25c-4k-seed2: DONE -> pilot/results/q25c_4k_seed2_n20.jsonl
+2026-11-17 00:07:33 step 2 d2-q25c-4k-seed3: START
+2026-11-17 02:50:29 step 2 d2-q25c-4k-seed3: DONE -> pilot/results/q25c_4k_seed3_n30.jsonl
+2026-11-17 02:50:29 step 3 d2-q25c-16k-seed2: START
+2026-11-17 06:09:41 step 3 d2-q25c-16k-seed2: DONE -> pilot/results/q25c_16k_seed2_n20.jsonl
+2026-11-17 06:09:41 step 4 d2-q25c-16k-seed3: START
+2026-11-17 11:10:20 step 4 d2-q25c-16k-seed3: DONE -> pilot/results/q25c_16k_seed3_n30.jsonl
+2026-11-17 11:10:20 QUEUE FINISHED

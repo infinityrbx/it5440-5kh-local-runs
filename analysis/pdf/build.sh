@@ -8,7 +8,7 @@ python3 - <<'PY'
 import re
 p = "/tmp/it5440_report.html"; s = open(p, encoding="utf-8").read()
 s = re.sub(r'<header id="title-block-header">.*?</header>', "", s, flags=re.S)
-for sec in ("2.", "3.", "4.", "5."):   # each of these sections starts a new page
+for sec in ("2.", "3.", "4.", "5.", "6."):   # each of these sections starts a new page
     s = re.sub(r'<h2 id="([^"]+)">' + re.escape(sec), lambda m: f'<h2 class="brk" id="{m.group(1)}">' + sec, s, count=1)
 open(p, "w", encoding="utf-8").write(s)
 PY

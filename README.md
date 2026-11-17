@@ -5,7 +5,7 @@ datasets the group uses. Everything needed to check or rerun the numbers in `REP
 
 | Model (Ollama tag) | Size | Runs |
 |---|---|---|
-| `qwen2.5-coder:7b` | 7B, Q4 | D1 (no filler, 4k, 16k), toolz (no filler, 4k) |
+| `qwen2.5-coder:7b` | 7B, Q4 | D2 (4k, 16k, n=50), D1 (no filler, 4k, 16k), toolz (no filler, 4k) |
 | `qwen3.5:9b` | 9B, Q4, thinking **off** | D2 (4k, 16k, n=50), D1 (no filler, 4k, 16k), toolz (no filler, 4k) |
 
 Hardware: Apple M2 Pro, 16 GB unified memory (about 10–11 GB usable by the GPU), Ollama 0.40,
@@ -86,5 +86,6 @@ Recompute all tables: `python3 analysis/analyze.py`.
 | `run_queue2.sh` | 14/11 21:22 → 15/11 06:39 | D1 qwen3.5 via /v1 (**discarded**, thinking leak, guard stopped the 16k step); D2 4k seed 2; D2 16k seed 3 |
 | `run_queue2b.sh` | 15/11 06:39 → 12:16 | D1 qwen3.5 via native API: no filler, guard, 16k |
 | `run_queue3.sh` | 15/11 23:24 → 16/11 06:43 | toolz qwen3.5 no filler + guard + 4k; D2 4k seed 3; D1 qwen3.5 4k |
+| `run_queue4.sh` | 16/11 22:18 → 17/11 11:10 | D2 qwen2.5-coder:7b: 4k seed 2 + 3, 16k seed 2 + 3 (`pilot/results/q25c_*.jsonl`) |
 
 Exact timestamps per step are in `logs/queue*/STATUS`.

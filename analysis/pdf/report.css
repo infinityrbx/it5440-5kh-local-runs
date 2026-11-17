@@ -1,5 +1,5 @@
 @page { size: A4; margin: 18mm 18mm 18mm 18mm; }
-body { font-family: "Liberation Sans", Arial, "DejaVu Sans", sans-serif; font-size: 10.5pt; line-height: 1.5; color: #222; }
+body { font-family: "Liberation Sans", Arial, "DejaVu Sans", sans-serif; font-size: 10pt; line-height: 1.4; color: #222; }
 h1 { color: #1f3a5f; font-size: 19pt; margin: 0 0 4px; }
 h1 + p { color: #666; margin-top: 0; }
 h2 { color: #1f3a5f; font-size: 14pt; border-bottom: 1.5px solid #1f3a5f; padding-bottom: 4px; margin-top: 22px; }
@@ -14,5 +14,5 @@ figcaption { font-size: 8.5pt; color: #555; margin-top: 4px; }
 li { margin-bottom: 3px; }
 h2 { break-after: avoid; }
 figure img { max-width: 88%; }
-img[src*="fig1_d2"], figure:has(img[alt^="Hình 2"]) img { max-width: 72%; }
+figure:has(img[alt^="Hình 2"]) img { max-width: 100%; }
 table { break-inside: avoid; }
