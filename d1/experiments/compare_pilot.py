@@ -17,6 +17,7 @@ Filler: anonymised toolz units, then stdlib (ContextBuilder). Thinking explicitl
       --out experiments/results/compare_gemma.jsonl
 """
 import argparse
+import re
 import concurrent.futures as cf
 import json
 import os
@@ -66,10 +67,19 @@ def toolz_solvable(n):
 def partial(pred, gold):
     import ast
     pred = pred.strip().strip("`").strip()   # same normalisation as run_eval.same_value
+    pred = re.sub(r"^(?:ANSWER:\s*)+", "", pred)   # doubled "ANSWER: ANSWER: [...]"
+    g = ast.literal_eval(gold)
     try:
-        p, g = ast.literal_eval(pred), ast.literal_eval(gold)
+        p = ast.literal_eval(pred)
     except Exception:
-        return 0.0
+        # wrapped list, e.g. array([1, 2, 3]) or [array([1, 2, 3]), dtype=int64]: score the innermost list
+        inner = re.findall(r"\[[^\[\]]*\]", pred)
+        try:
+            p = ast.literal_eval(inner[-1]) if inner else None
+        except Exception:
+            p = None
+        if p is None:
+            return 0.0
     if not isinstance(p, list) or not isinstance(g, list):
         return float(p == g)
     return sum(a == b for a, b in zip(p, g)) / len(g)

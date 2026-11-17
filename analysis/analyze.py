@@ -16,7 +16,8 @@ import os
 import random
 from collections import defaultdict
 
-from d1score import d1_partial  # D1 partial score recomputed with the backtick fix
+from d1score import d1_partial  # D1 partial score recomputed with the backtick / wrapper fix
+from toolzscore import toolz_correct  # toolz exact score with doubled "ANSWER:" fixed
 from math import comb
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -59,6 +60,8 @@ MD.append("| model | length | n | C0 | C1 start | C1 middle | C1 end | C2 | C3 |
 MD.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
 OUT["d2"] = {}
 NOTES = []
+CUTS = ["Answers cut at the 2048-token output limit, out of 50:\n",
+        "| model | length | C0 | C1 start | C1 middle | C1 end | C2 | C3 |", "|---|---|---|---|---|---|---|---|"]
 for model, tag in D2_MODELS.items():
     d2 = {(L, s): {(r["i"], r["cond"], r["pos"]): r for r in load(f"pilot/results/{tag}_{L}_seed{s}_n{n}.jsonl")}
           for L in ("4k", "16k") for s, n in ((2, 20), (3, 30))}
@@ -80,10 +83,14 @@ for model, tag in D2_MODELS.items():
         vals = [(g(s, i, "C1", 0.0) + g(s, i, "C1", 1.0)) / 2 - g(s, i, "C1", 0.5) for s, i in pool]
         D, (lo, hi) = sum(vals) / len(vals), boot_ci(vals)
         cut = sum(d2[(L, s)][(i, "C1", 0.5)]["output_tokens"] >= 2048 for s, i in pool)
+        cuts = {name: sum(d2[(L, s)][(i, c, q)]["output_tokens"] >= 2048 for s, i in pool)
+                for name, c, q in (("C0", "C0", 0.0), ("start", "C1", 0.0), ("middle", "C1", 0.5),
+                                   ("end", "C1", 1.0), ("C2", "C2", 0.0), ("C3", "C3", 0.0))}
+        CUTS.append(f"| {model} | {L} | " + " | ".join(str(v) for v in cuts.values()) + " |")
         toks = [d2[(L, s)][(i, "C1", q)]["prompt_tokens"] for s, i in pool for q in (0.0, 0.5, 1.0)]
         (b, c, pv), (be, ce, pe) = tests[0.0], tests[1.0]
         OUT["d2"][model][L] = dict(n=len(pool), acc=acc, pos=pos, b=b, c=c, p=pv, b_end=be, c_end=ce, p_end=pe,
-                                   D=D, ci=[lo, hi], middle_cut=cut, prompt_tokens=[min(toks), max(toks)])
+                                   D=D, ci=[lo, hi], middle_cut=cut, cut_by_cond=cuts, prompt_tokens=[min(toks), max(toks)])
         MD.append(f"| {model} | {L} ({min(toks)}–{max(toks)} prompt tokens) | {len(pool)} | {pct(acc['C0'])} | {pct(pos[0.0])} | "
                   f"{pct(pos[0.5])} | {pct(pos[1.0])} | {pct(acc['C2'])} | {pct(acc['C3'])} | {b}:{c}, p={pv:.3f} | "
                   f"{be}:{ce}, p={pe:.3f} | {D:+.2f} [{lo:+.2f}, {hi:+.2f}] | {cut} |")
@@ -103,6 +110,7 @@ for model, tag in D2_MODELS.items():
     NOTES.append(f"{model}: 16k, leaving out the {len(cut_items)} middle answers cut at 2048 tokens: {b2}:{c2}, "
                  f"p = {sign_test(b2, c2):.3f}.")
 MD.append("\n" + "\n\n".join(NOTES) + "\n")
+MD.append("\n".join(CUTS) + "\n")
 
 
 # ---------------------------------------------------------------- D1: SemTrace (group builder, fixed filler)
@@ -157,11 +165,11 @@ MD.append("|---|---|---|---|---|---|---|")
 OUT["toolz"] = {}
 for model, (f0, f4) in TZ.items():
     r0 = [r for r in load(f0) if "error" not in r]
-    o = {k: [bool(r["correct"]) for r in r0 if len(r["requested"]) == k] for k in (1, 3)}
+    o = {k: [toolz_correct(r) for r in r0 if len(r["requested"]) == k] for k in (1, 3)}
     r4 = [r for r in load(f4) if "error" not in r]
     by = defaultdict(dict)
     for r in r4:
-        by[r["item"]][r["layout"]] = bool(r["correct"])
+        by[r["item"]][r["layout"]] = toolz_correct(r)
     k1 = [v for v in by.values() if "middle" in v]
     k3 = [v for v in by.values() if "spread" in v]
     a1 = {l: sum(v[l] for v in k1) / len(k1) for l in ("start", "middle", "end")}

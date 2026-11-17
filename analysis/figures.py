@@ -8,7 +8,8 @@ import os
 import random
 from collections import defaultdict
 
-from d1score import d1_partial  # D1 partial score recomputed with the backtick fix
+from d1score import d1_partial  # D1 partial score recomputed with the backtick / wrapper fix
+from toolzscore import toolz_correct  # toolz exact score with doubled "ANSWER:" fixed
 from math import sqrt
 
 import matplotlib
@@ -135,7 +136,7 @@ for model, f in (("qwen2.5-coder", "toolz/experiments/results/local_q25c_4k.json
     by = defaultdict(dict)
     for r in load(f):
         if "error" not in r:
-            by[r["item"]][r["layout"]] = bool(r["correct"])
+            by[r["item"]][r["layout"]] = toolz_correct(r)
     its = [v for v in by.values() if {"start", "middle", "end"} <= set(v)]
     vals = [(v["start"] + v["end"]) / 2 - v["middle"] for v in its]
     effects.append((f"toolz · {model} · k=1 · 4k", "toolz (chính xác)", *mean_ci(vals)))

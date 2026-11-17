@@ -17,6 +17,15 @@ qwen2.5-coder:7b: middle position, 4k vs 16k on the same 50 puzzles: 3 worse at 
 
 qwen2.5-coder:7b: 16k, leaving out the 9 middle answers cut at 2048 tokens: 3:0, p = 0.250.
 
+Answers cut at the 2048-token output limit, out of 50:
+
+| model | length | C0 | C1 start | C1 middle | C1 end | C2 | C3 |
+|---|---|---|---|---|---|---|---|
+| qwen3.5:9b | 4k | 0 | 1 | 2 | 0 | 1 | 0 |
+| qwen3.5:9b | 16k | 0 | 0 | 4 | 0 | 0 | 0 |
+| qwen2.5-coder:7b | 4k | 2 | 4 | 6 | 8 | 15 | 1 |
+| qwen2.5-coder:7b | 16k | 2 | 14 | 9 | 9 | 15 | 1 |
+
 ## D1 SemTrace (group builder with layout-independent filler), partial-match score
 
 | model | digits | length | n | exact (all positions) | start | middle | end | D [95% CI] |
@@ -27,11 +36,11 @@ qwen2.5-coder:7b: 16k, leaving out the 9 middle answers cut at 2048 tokens: 3:0,
 | qwen2.5-coder:7b | 4 | no filler | 30 | 1/30 | 0.31 (no position) | | | |
 | qwen2.5-coder:7b | 4 | 4k | 30 | 0/90 | 0.15 | 0.05 | 0.23 | +0.14 [+0.08, +0.20] |
 | qwen2.5-coder:7b | 4 | 16k | 30 | 0/90 | 0.06 | 0.00 | 0.21 | +0.13 [+0.09, +0.17] |
-| qwen3.5:9b | 2 | no filler | 30 | 2/30 | 0.51 (no position) | | | |
-| qwen3.5:9b | 2 | 4k | 30 | 1/90 | 0.45 | 0.40 | 0.52 | +0.09 [+0.03, +0.14] |
-| qwen3.5:9b | 2 | 16k | 30 | 1/90 | 0.33 | 0.28 | 0.42 | +0.10 [+0.03, +0.17] |
+| qwen3.5:9b | 2 | no filler | 30 | 2/30 | 0.64 (no position) | | | |
+| qwen3.5:9b | 2 | 4k | 30 | 1/90 | 0.48 | 0.40 | 0.52 | +0.10 [+0.05, +0.15] |
+| qwen3.5:9b | 2 | 16k | 30 | 1/90 | 0.39 | 0.28 | 0.44 | +0.14 [+0.07, +0.21] |
 | qwen3.5:9b | 4 | no filler | 30 | 1/30 | 0.33 (no position) | | | |
-| qwen3.5:9b | 4 | 4k | 30 | 0/90 | 0.17 | 0.14 | 0.17 | +0.03 [-0.02, +0.08] |
+| qwen3.5:9b | 4 | 4k | 30 | 0/90 | 0.17 | 0.14 | 0.18 | +0.03 [-0.02, +0.08] |
 | qwen3.5:9b | 4 | 16k | 30 | 0/90 | 0.13 | 0.08 | 0.11 | +0.04 [-0.00, +0.09] |
 
 Discarded run `d1_q35_0.jsonl` (qwen3.5 via /v1): 60/60 rows contain thinking, 60 empty answers. Not used.
@@ -41,4 +50,4 @@ Discarded run `d1_q35_0.jsonl` (qwen3.5 via /v1): 60/60 rows contain thinking, 6
 | model | no filler k=1 | no filler k=3 | 4k k=1 start / middle / end | middle vs start (b:c, p) | middle vs end (b:c, p) | 4k k=3 cluster start / middle / end / spread |
 |---|---|---|---|---|---|---|
 | qwen2.5-coder:7b | 52.5% | 20% | 52.5% / 37.5% / 45% | 7:1, p=0.07 | 5:2, p=0.45 | 30% / 37.5% / 35% / 32.5% |
-| qwen3.5:9b | 50% | 30% | 37.5% / 40% / 40% | 3:4, p=1.00 | 2:2, p=1.00 | 30% / 22.5% / 22.5% / 20% |
+| qwen3.5:9b | 50% | 30% | 37.5% / 42.5% / 40% | 2:4, p=0.69 | 1:2, p=1.00 | 30% / 22.5% / 22.5% / 20% |
